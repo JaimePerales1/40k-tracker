@@ -402,7 +402,8 @@
   <header>
     <div class="eyebrow">In the grim darkness of the far future</div>
     <h1>Battle Tracker</h1>
-    <a href="codex.html" style="display:inline-block; margin-top:10px; font-size:11px; letter-spacing:0.15em; text-transform:uppercase; color:var(--steel); text-decoration:none; border:1px solid var(--panel-edge); padding:6px 14px; border-radius:20px; transition:color .15s, border-color .15s;" onmouseover="this.style.color='var(--gold)'; this.style.borderColor='var(--gold-dim)';" onmouseout="this.style.color='var(--steel)'; this.style.borderColor='var(--panel-edge)';">📖 Keyword Codex</a>
+    <a href="codex.html" style="display:inline-block; margin-top:10px; margin-right:6px; font-size:11px; letter-spacing:0.15em; text-transform:uppercase; color:var(--steel); text-decoration:none; border:1px solid var(--panel-edge); padding:6px 14px; border-radius:20px; transition:color .15s, border-color .15s;" onmouseover="this.style.color='var(--gold)'; this.style.borderColor='var(--gold-dim)';" onmouseout="this.style.color='var(--steel)'; this.style.borderColor='var(--panel-edge)';">📖 Keyword Codex</a>
+    <a href="leaderboard.html" style="display:inline-block; margin-top:10px; font-size:11px; letter-spacing:0.15em; text-transform:uppercase; color:var(--steel); text-decoration:none; border:1px solid var(--panel-edge); padding:6px 14px; border-radius:20px; transition:color .15s, border-color .15s;" onmouseover="this.style.color='var(--gold)'; this.style.borderColor='var(--gold-dim)';" onmouseout="this.style.color='var(--steel)'; this.style.borderColor='var(--panel-edge)';">🏆 Leaderboard</a>
   </header>
 
   <!-- Round -->
@@ -428,12 +429,12 @@
   <!-- Head to head -->
   <div class="versus-bar">
     <div class="versus-side" id="vSide1">
-      <div class="vname" id="vName1" contenteditable="true" spellcheck="false" oninput="mirrorName(this, 'name1')" onblur="fallbackName(1)" title="Click to rename">Player 1</div>
+      <div class="vname" id="vName1" contenteditable="true" spellcheck="false" oninput="mirrorName(this, 'name1', 1)" onblur="fallbackName(1)" title="Click to rename">Player 1</div>
       <div class="vscore p1" id="vScore1">0</div>
     </div>
     <div class="versus-vs">VS</div>
     <div class="versus-side" id="vSide2">
-      <div class="vname" id="vName2" contenteditable="true" spellcheck="false" oninput="mirrorName(this, 'name2')" onblur="fallbackName(2)" title="Click to rename">Player 2</div>
+      <div class="vname" id="vName2" contenteditable="true" spellcheck="false" oninput="mirrorName(this, 'name2', 2)" onblur="fallbackName(2)" title="Click to rename">Player 2</div>
       <div class="vscore p2" id="vScore2">0</div>
     </div>
   </div>
@@ -443,7 +444,7 @@
 
     <!-- Player 1 -->
     <section class="player p1">
-      <div class="player-name" id="name1" contenteditable="true" spellcheck="false" oninput="mirrorName(this, 'vName1')" onblur="fallbackName(1)" title="Click to rename">Player 1</div>
+      <div class="player-name" id="name1" contenteditable="true" spellcheck="false" oninput="mirrorName(this, 'vName1', 1)" onblur="fallbackName(1)" title="Click to rename">Player 1</div>
 
       <div class="stat">
         <div class="stat-label"><span>Primary</span><span>max 50</span></div>
@@ -485,7 +486,7 @@
 
     <!-- Player 2 -->
     <section class="player p2">
-      <div class="player-name" id="name2" contenteditable="true" spellcheck="false" oninput="mirrorName(this, 'vName2')" onblur="fallbackName(2)" title="Click to rename">Player 2</div>
+      <div class="player-name" id="name2" contenteditable="true" spellcheck="false" oninput="mirrorName(this, 'vName2', 2)" onblur="fallbackName(2)" title="Click to rename">Player 2</div>
 
       <div class="stat">
         <div class="stat-label"><span>Primary</span><span>max 50</span></div>
@@ -532,26 +533,56 @@
     <button onclick="hideConfirm()">Cancel</button>
     <button class="confirm-yes" onclick="resetGame()">Reset Everything</button>
   </div>
+  <p style="text-align:center; font-size:11px; color:var(--steel); margin-top:10px; letter-spacing:0.02em;">Autosaves on this device — pick up right where you left off.</p>
 
   <footer>The Emperor Protects</footer>
 </div>
 
 <script>
   const CAPS = { primary: 50, secondary: 40, cp: 99 };
-  let state = {
-    round: 1,
-    1: { primary: 0, secondary: 0, cp: 0 },
-    2: { primary: 0, secondary: 0, cp: 0 }
-  };
+  const STORAGE_KEY = 'battle-tracker-state-v1';
+
+  function defaultState() {
+    return {
+      round: 1,
+      names: { 1: 'Player 1', 2: 'Player 2' },
+      1: { primary: 0, secondary: 0, cp: 0 },
+      2: { primary: 0, secondary: 0, cp: 0 }
+    };
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed[1] && parsed[2] && parsed.names) return parsed;
+      return null;
+    } catch (e) {
+      return null; // private browsing or storage disabled — app still works, just won't persist
+    }
+  }
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      // storage unavailable — fail silently, game still works for this session
+    }
+  }
+
+  let state = loadState() || defaultState();
 
   function adjust(player, key, delta) {
     const p = state[player];
     p[key] = Math.min(CAPS[key], Math.max(0, p[key] + delta));
+    saveState();
     render();
   }
 
   function changeRound(delta) {
     state.round = Math.min(6, Math.max(1, state.round + delta));
+    saveState();
     render();
   }
 
@@ -589,8 +620,11 @@
     document.getElementById('prevRound').disabled = state.round === 1;
   }
 
-  function mirrorName(sourceEl, targetId) {
-    document.getElementById(targetId).textContent = sourceEl.textContent;
+  function mirrorName(sourceEl, targetId, player) {
+    const text = sourceEl.textContent;
+    document.getElementById(targetId).textContent = text;
+    state.names[player] = text.trim() || ('Player ' + player);
+    saveState();
   }
 
   function fallbackName(player) {
@@ -599,7 +633,11 @@
     if (nameEl.textContent.trim() === '') {
       nameEl.textContent = 'Player ' + player;
       vEl.textContent = 'Player ' + player;
+      state.names[player] = 'Player ' + player;
+    } else {
+      state.names[player] = nameEl.textContent.trim();
     }
+    saveState();
   }
 
   function showConfirm() {
@@ -613,15 +651,22 @@
   }
 
   function resetGame() {
-    state = {
-      round: 1,
-      1: { primary: 0, secondary: 0, cp: 0 },
-      2: { primary: 0, secondary: 0, cp: 0 }
-    };
+    state = defaultState();
+    saveState();
     hideConfirm();
+    initNames();
     render();
   }
 
+  function initNames() {
+    for (const p of [1, 2]) {
+      const n = state.names[p];
+      document.getElementById('name' + p).textContent = n;
+      document.getElementById('vName' + p).textContent = n;
+    }
+  }
+
+  initNames();
   render();
 </script>
 </body>
