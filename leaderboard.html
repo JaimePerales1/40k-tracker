@@ -137,6 +137,44 @@
   .name-cell { font-weight: 600; }
   .empty-note { color: var(--steel); font-size: 14px; text-align: center; padding: 20px 0; }
 
+  .season-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    align-items: center;
+  }
+
+  #seasonFilter {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 10px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: 6px;
+    color: var(--bone);
+  }
+  #seasonFilter:focus { outline: none; border-color: var(--gold-dim); }
+
+  .season-btn {
+    flex-shrink: 0;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--gold-dim);
+    background: transparent;
+    color: var(--gold);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .15s;
+  }
+  .season-btn:hover { background: rgba(201,162,39,0.1); }
+
   /* ---------- Log match form ---------- */
   .log-form {
     background: var(--panel);
@@ -234,6 +272,16 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: #5a5560;
+  }
+
+  .match-season-tag {
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--steel);
+    background: #221e27;
+    padding: 2px 8px;
+    border-radius: 10px;
   }
 
   .match-result {
@@ -334,6 +382,10 @@
   <div class="status-banner" id="statusBanner"></div>
 
   <div class="section-heading">Standings</div>
+  <div class="season-bar">
+    <select id="seasonFilter" aria-label="Season filter"></select>
+    <button type="button" id="newSeasonBtn" class="season-btn">+ New Season</button>
+  </div>
   <table class="standings-table" id="standingsTable" style="display:none;">
     <thead>
       <tr>
@@ -416,8 +468,21 @@
   }
 
   const PAGE_SIZE = 15;
-  let lastVisible = null;
-  let allMatchesForStandings = [];
+  let allMatches = [];            // full match cache, sorted newest-first
+  let currentSeasonName = 'Season 1';
+  let activeFilter = 'current';   // 'current' | 'all' | <specific season name>
+  let historyRenderedCount = 0;
+
+  function tsToMillis(ts) {
+    if (!ts) return 0;
+    if (typeof ts.toMillis === 'function') return ts.toMillis();
+    if (typeof ts.toDate === 'function') return ts.toDate().getTime();
+    return 0;
+  }
+
+  function getMatchSeason(m) {
+    return m.season || 'Season 1'; // matches logged before seasons existed default here
+  }
 
   function showStatus(msg, isError) {
     const el = document.getElementById('statusBanner');
@@ -455,6 +520,7 @@
       await matchRef.set({
         winnerName, loserName, winnerScore, loserScore,
         winnerArmy, loserArmy, mission, notes,
+        season: currentSeasonName,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       });
 
@@ -462,8 +528,10 @@
       showStatus('Match logged!', false);
       setTimeout(hideStatus, 2500);
 
-      loadStandings();
-      resetAndLoadHistory();
+      await fetchAllMatches();
+      buildSeasonOptions();
+      renderStandings();
+      resetHistoryView();
 
     } catch (err) {
       console.error(err);
@@ -474,92 +542,170 @@
     }
   });
 
+  // ---------- Data loading ----------
+  function loadMeta() {
+    return db.collection('meta').doc('config').get().then((doc) => {
+      currentSeasonName = (doc.exists && doc.data().currentSeason) ? doc.data().currentSeason : 'Season 1';
+    }).catch(() => { currentSeasonName = 'Season 1'; });
+  }
+
+  function fetchAllMatches() {
+    return db.collection('matches').get().then((snapshot) => {
+      const arr = [];
+      snapshot.forEach((doc) => arr.push({ id: doc.id, ...doc.data() }));
+      arr.sort((a, b) => tsToMillis(b.timestamp) - tsToMillis(a.timestamp));
+      allMatches = arr;
+      return arr;
+    }).catch((err) => {
+      console.error(err);
+      showStatus('Could not load the leaderboard — check your connection, or it may not be set up yet.', true);
+      return [];
+    });
+  }
+
+  function filteredMatches() {
+    if (activeFilter === 'all') return allMatches;
+    const seasonToMatch = activeFilter === 'current' ? currentSeasonName : activeFilter;
+    return allMatches.filter((m) => getMatchSeason(m) === seasonToMatch);
+  }
+
+  // ---------- Season dropdown ----------
+  function buildSeasonOptions() {
+    const seasonLatest = {};
+    allMatches.forEach((m) => {
+      const s = getMatchSeason(m);
+      const t = tsToMillis(m.timestamp);
+      if (!(s in seasonLatest) || t > seasonLatest[s]) seasonLatest[s] = t;
+    });
+
+    const historicalSeasons = Object.keys(seasonLatest)
+      .filter((s) => s !== currentSeasonName)
+      .sort((a, b) => seasonLatest[b] - seasonLatest[a]);
+
+    const select = document.getElementById('seasonFilter');
+    select.innerHTML = '';
+    addSeasonOption(select, 'current', `Current — ${currentSeasonName}`);
+    addSeasonOption(select, 'all', 'All-Time');
+    historicalSeasons.forEach((s) => addSeasonOption(select, s, s));
+    select.value = activeFilter;
+  }
+
+  function addSeasonOption(select, value, label) {
+    const opt = document.createElement('option');
+    opt.value = value;
+    opt.textContent = label;
+    select.appendChild(opt);
+  }
+
+  document.getElementById('seasonFilter').addEventListener('change', (e) => {
+    activeFilter = e.target.value;
+    renderStandings();
+    resetHistoryView();
+  });
+
+  function suggestNextSeasonName() {
+    const seen = new Set(allMatches.map(getMatchSeason));
+    seen.add(currentSeasonName);
+    let maxNum = 0;
+    seen.forEach((s) => {
+      const match = /^Season (\d+)$/.exec(s);
+      if (match) maxNum = Math.max(maxNum, parseInt(match[1], 10));
+    });
+    return `Season ${maxNum + 1}`;
+  }
+
+  document.getElementById('newSeasonBtn').addEventListener('click', async () => {
+    if (!firebaseReady) { showStatus('Leaderboard isn\'t connected yet.', true); return; }
+    const suggestion = suggestNextSeasonName();
+    const name = window.prompt('Name this new season:', suggestion);
+    if (!name || !name.trim()) return;
+    const trimmed = name.trim();
+
+    try {
+      await db.collection('meta').doc('config').set({ currentSeason: trimmed }, { merge: true });
+      currentSeasonName = trimmed;
+      activeFilter = 'current';
+      buildSeasonOptions();
+      renderStandings();
+      resetHistoryView();
+      showStatus(`${trimmed} has begun! Past seasons are safe and still viewable in the dropdown.`, false);
+      setTimeout(hideStatus, 4000);
+    } catch (err) {
+      console.error(err);
+      showStatus('Could not start a new season — check your connection.', true);
+    }
+  });
+
   // ---------- Standings ----------
-  function loadStandings() {
-    if (!firebaseReady) return;
-    db.collection('matches').get().then((snapshot) => {
-      const stats = {};
-      snapshot.forEach((doc) => {
-        const d = doc.data();
-        const w = (d.winnerName || '').trim();
-        const l = (d.loserName || '').trim();
-        if (w) {
-          const key = w.toLowerCase();
-          if (!stats[key]) stats[key] = { name: w, wins: 0, losses: 0 };
-          stats[key].wins++;
-        }
-        if (l) {
-          const key = l.toLowerCase();
-          if (!stats[key]) stats[key] = { name: l, wins: 0, losses: 0 };
-          stats[key].losses++;
-        }
-      });
-
-      const rows = Object.values(stats).sort((a, b) => b.wins - a.wins || (b.wins + b.losses) - (a.wins + a.losses));
-      const tbody = document.getElementById('standingsBody');
-      const table = document.getElementById('standingsTable');
-      const empty = document.getElementById('standingsEmpty');
-
-      if (rows.length === 0) {
-        table.style.display = 'none';
-        empty.style.display = 'block';
-        return;
+  function renderStandings() {
+    const matches = filteredMatches();
+    const stats = {};
+    matches.forEach((d) => {
+      const w = (d.winnerName || '').trim();
+      const l = (d.loserName || '').trim();
+      if (w) {
+        const key = w.toLowerCase();
+        if (!stats[key]) stats[key] = { name: w, wins: 0, losses: 0 };
+        stats[key].wins++;
       }
-
-      table.style.display = 'table';
-      empty.style.display = 'none';
-      tbody.innerHTML = rows.map((r, i) => `
-        <tr>
-          <td class="rank-cell">${i + 1}</td>
-          <td class="name-cell">${escapeHtml(r.name)}</td>
-          <td class="num">${r.wins}</td>
-          <td class="num">${r.losses}</td>
-          <td class="num">${r.wins + r.losses}</td>
-        </tr>
-      `).join('');
-    }).catch((err) => {
-      console.error(err);
-      showStatus('Could not load standings — the leaderboard may not be set up yet.', true);
+      if (l) {
+        const key = l.toLowerCase();
+        if (!stats[key]) stats[key] = { name: l, wins: 0, losses: 0 };
+        stats[key].losses++;
+      }
     });
+
+    const rows = Object.values(stats).sort((a, b) => b.wins - a.wins || (b.wins + b.losses) - (a.wins + a.losses));
+    const tbody = document.getElementById('standingsBody');
+    const table = document.getElementById('standingsTable');
+    const empty = document.getElementById('standingsEmpty');
+
+    if (rows.length === 0) {
+      table.style.display = 'none';
+      empty.style.display = 'block';
+      return;
+    }
+
+    table.style.display = 'table';
+    empty.style.display = 'none';
+    tbody.innerHTML = rows.map((r, i) => `
+      <tr>
+        <td class="rank-cell">${i + 1}</td>
+        <td class="name-cell">${escapeHtml(r.name)}</td>
+        <td class="num">${r.wins}</td>
+        <td class="num">${r.losses}</td>
+        <td class="num">${r.wins + r.losses}</td>
+      </tr>
+    `).join('');
   }
 
-  // ---------- Match history (paginated) ----------
-  function resetAndLoadHistory() {
-    lastVisible = null;
+  // ---------- Match history (in-memory pagination — no index setup needed) ----------
+  function resetHistoryView() {
+    historyRenderedCount = 0;
     document.getElementById('historyContainer').innerHTML = '';
-    loadHistoryPage();
+    renderNextHistoryPage();
   }
 
-  function loadHistoryPage() {
-    if (!firebaseReady) return;
-    let query = db.collection('matches').orderBy('timestamp', 'desc').limit(PAGE_SIZE);
-    if (lastVisible) query = query.startAfter(lastVisible);
+  function renderNextHistoryPage() {
+    const matches = filteredMatches();
+    const empty = document.getElementById('historyEmpty');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
 
-    query.get().then((snapshot) => {
-      const container = document.getElementById('historyContainer');
-      const empty = document.getElementById('historyEmpty');
-      const loadMoreBtn = document.getElementById('loadMoreBtn');
+    if (matches.length === 0) {
+      empty.style.display = 'block';
+      loadMoreBtn.style.display = 'none';
+      return;
+    }
+    empty.style.display = 'none';
 
-      if (snapshot.empty && !lastVisible) {
-        empty.style.display = 'block';
-        loadMoreBtn.style.display = 'none';
-        return;
-      }
-      empty.style.display = 'none';
-
-      snapshot.forEach((doc) => {
-        container.insertAdjacentHTML('beforeend', renderMatchCard(doc.data()));
-      });
-
-      lastVisible = snapshot.docs[snapshot.docs.length - 1] || lastVisible;
-      loadMoreBtn.style.display = snapshot.size === PAGE_SIZE ? 'block' : 'none';
-    }).catch((err) => {
-      console.error(err);
-      showStatus('Could not load match history — the leaderboard may not be set up yet.', true);
-    });
+    const nextSlice = matches.slice(historyRenderedCount, historyRenderedCount + PAGE_SIZE);
+    const container = document.getElementById('historyContainer');
+    nextSlice.forEach((d) => container.insertAdjacentHTML('beforeend', renderMatchCard(d)));
+    historyRenderedCount += nextSlice.length;
+    loadMoreBtn.style.display = historyRenderedCount < matches.length ? 'block' : 'none';
   }
 
-  document.getElementById('loadMoreBtn').addEventListener('click', loadHistoryPage);
+  document.getElementById('loadMoreBtn').addEventListener('click', renderNextHistoryPage);
 
   function renderMatchCard(d) {
     const date = d.timestamp && d.timestamp.toDate ? d.timestamp.toDate().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
@@ -570,7 +716,10 @@
 
     return `
       <div class="match-card">
-        <div class="match-top-row"><span class="match-date">${date}</span></div>
+        <div class="match-top-row">
+          <span class="match-date">${date}</span>
+          <span class="match-season-tag">${escapeHtml(getMatchSeason(d))}</span>
+        </div>
         <div class="match-result">
           <div class="match-side winner">
             <div class="match-name">${escapeHtml(d.winnerName || 'Unknown')}</div>
@@ -596,13 +745,19 @@
   }
 
   // ---------- Init ----------
-  if (firebaseReady) {
-    loadStandings();
-    resetAndLoadHistory();
-  } else {
-    document.getElementById('standingsEmpty').textContent = 'Leaderboard not connected yet.';
-    document.getElementById('historyEmpty').textContent = 'Leaderboard not connected yet.';
+  async function initApp() {
+    if (!firebaseReady) {
+      document.getElementById('standingsEmpty').textContent = 'Leaderboard not connected yet.';
+      document.getElementById('historyEmpty').textContent = 'Leaderboard not connected yet.';
+      return;
+    }
+    await loadMeta();
+    await fetchAllMatches();
+    buildSeasonOptions();
+    renderStandings();
+    resetHistoryView();
   }
+  initApp();
 </script>
 </body>
 </html>
