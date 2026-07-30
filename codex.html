@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Codex — Warhammer 40,000 Keywords</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --void: #121014;
+    --panel: #1b181e;
+    --panel-edge: #2a2530;
+    --steel: #8d8593;
+    --bone: #e8e2d6;
+    --gold: #c9a227;
+    --gold-dim: #7a6420;
+    --azure: #4f8fb8;
+    --radius: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--void);
+    background-image: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201,162,39,0.07), transparent);
+    color: var(--bone);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 18px 12px 40px;
+  }
+
+  .app { width: 100%; max-width: 560px; }
+
+  header { text-align: center; margin-bottom: 16px; }
+
+  .back-link {
+    display: inline-block;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--steel);
+    text-decoration: none;
+    margin-bottom: 12px;
+    border: 1px solid var(--panel-edge);
+    padding: 6px 12px;
+    border-radius: 20px;
+    transition: color .15s, border-color .15s;
+  }
+  .back-link:hover { color: var(--gold); border-color: var(--gold-dim); }
+
+  .eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--steel);
+    margin-bottom: 5px;
+  }
+
+  h1 {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 24px;
+    letter-spacing: 0.08em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+
+  h1::after {
+    content: "";
+    display: block;
+    width: 120px;
+    height: 1px;
+    margin: 8px auto 0;
+    background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  }
+
+  .disclaimer {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--steel);
+    text-align: center;
+    margin: 14px auto 18px;
+    max-width: 440px;
+  }
+
+  /* ---------- Search & filters ---------- */
+  .search-wrap { margin-bottom: 12px; }
+
+  #search {
+    width: 100%;
+    padding: 12px 14px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: 8px;
+    color: var(--bone);
+  }
+
+  #search::placeholder { color: #5a5560; }
+  #search:focus { outline: none; border-color: var(--gold-dim); }
+
+  .filter-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+
+  .chip {
+    padding: 7px 13px;
+    border-radius: 20px;
+    border: 1px solid var(--panel-edge);
+    background: transparent;
+    color: var(--steel);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all .15s;
+  }
+
+  .chip:hover { border-color: var(--gold-dim); color: var(--gold); }
+
+  .chip.active {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--void);
+  }
+
+  /* ---------- Keyword cards ---------- */
+  .category-heading {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--azure);
+    margin: 20px 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--panel-edge);
+  }
+
+  .category-heading:first-of-type { margin-top: 0; }
+
+  .kw-card {
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-left: 3px solid var(--gold-dim);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+
+  .kw-name {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--gold);
+    margin-bottom: 5px;
+  }
+
+  .kw-desc {
+    font-size: 15px;
+    line-height: 1.45;
+    color: var(--bone);
+  }
+
+  .no-results {
+    text-align: center;
+    color: var(--steel);
+    font-size: 14px;
+    padding: 30px 0;
+    display: none;
+  }
+
+  footer {
+    text-align: center;
+    margin-top: 26px;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: #4a444f;
+  }
+
+  button:focus-visible, input:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <a class="back-link" href="index.html">◂ Back to Tracker</a>
+    <div class="eyebrow">Plain-English reference</div>
+    <h1>Keyword Codex</h1>
+  </header>
+
+  <p class="disclaimer">
+    Quick, in-your-own-words reminders of common core rule keywords — handy for jogging your memory mid-game.
+    These are simplified summaries, not official rules text. Always defer to your rulebook, the official app,
+    or your group's ruling for exact wording and current errata.
+  </p>
+
+  <div class="search-wrap">
+    <input type="text" id="search" placeholder="Search keywords…" oninput="filterCards()">
+  </div>
+
+  <div class="filter-row" id="filterRow">
+    <button class="chip active" data-cat="all" onclick="setFilter('all')">All</button>
+    <button class="chip" data-cat="attacks" onclick="setFilter('attacks')">Attacks</button>
+    <button class="chip" data-cat="movement" onclick="setFilter('movement')">Movement &amp; Deployment</button>
+    <button class="chip" data-cat="durability" onclick="setFilter('durability')">Durability</button>
+    <button class="chip" data-cat="other" onclick="setFilter('other')">Other</button>
+  </div>
+
+  <div id="cardContainer">
+
+    <div class="category-heading" data-cat="attacks">Attacks</div>
+
+    <div class="kw-card" data-cat="attacks">
+      <div class="kw-name">Anti-&lt;Keyword&gt; X+</div>
+      <div class="kw-desc">Against units with the matching keyword (like Infantry, Vehicle, or Monster), any wound roll of X or higher automatically counts as a critical wound — even if it normally wouldn't have been one. Great for cutting through specific target types.</div>
+    </div>
+
+    <div class="kw-card" data-cat="attacks">
+      <div class="kw-name">Lethal Hits</div>
+      <div class="kw-desc">A critical hit (an unmodified roll of 6 to hit) automatically wounds the target — no wound roll needed for that attack.</div>
+    </div>
+
+    <div class="kw-card" data-cat="attacks">
+      <div class="kw-name">Devastating Wounds</div>
+      <div class="kw-desc">A critical wound (an unmodified roll of 6 to wound) turns into mortal wounds equal to the weapon's damage, and the target doesn't get to make a save against it.</div>
+    </div>
+
+    <div class="kw-card" data-cat="attacks">
+      <div class="kw-name">Sustained Hits X</div>
+      <div class="kw-desc">A critical hit generates X extra hits on top of the one you already scored — more shots for free when you roll well.</div>
+    </div>
+
+    <div class="kw-card" data-cat="attacks">
+      <div class="kw-name">Twin-linked</div>
+      <div class="kw-desc">You get to re-roll wound rolls for this weapon. Simple and always useful.</div>
+    </div>
+
+    <div class="kw-card" data-cat="attacks">
+      <div class="kw-name">Precision</div>
+      <div class="kw-desc">Hits from this weapon can be allocated to an enemy Character model in the target unit, even if that model isn't normally the closest or otherwise eligible to be picked.</div>
+    </div>
+
+    <div class="kw-card" data-cat="attacks">
+      <div class="kw-name">Heavy</div>
+      <div class="kw-desc">The weapon gets +1 to hit if the model firing it didn't move this turn (stayed stationary).</div>
+    </div>
+
+    <div class="kw-card" data-cat="attacks">
+      <div class="kw-name">Assault</div>
+      <div class="kw-desc">This weapon can still be fired even if the unit Advanced this turn (normally Advancing stops you shooting).</div>
+    </div>
+
+    <div class="kw-card" data-cat="attacks">
+      <div class="kw-name">Rapid Fire X</div>
+      <div class="kw-desc">If the target is within half the weapon's range, add X extra attacks with this weapon.</div>
+    </div>
+
+    <div class="kw-card" data-cat="attacks">
+      <div class="kw-name">Pistol</div>
+      <div class="kw-desc">Can be fired even while your unit is within engagement range of the enemy (normally not allowed), and can target the unit you're locked in combat with.</div>
+    </div>
+
+    <div class="kw-card" data-cat="attacks">
+      <div class="kw-name">Blast</div>
+      <div class="kw-desc">This weapon gets extra attacks against bigger units — roughly +1 attack for every 5 models in the target unit. Rewards shooting into big blobs.</div>
+    </div>
+
+    <div class="kw-card" data-cat="attacks">
+      <div class="kw-name">Ignores Cover</div>
+      <div class="kw-desc">The target doesn't get any benefit from being in cover against this attack.</div>
+    </div>
+
+    <div class="kw-card" data-cat="attacks">
+      <div class="kw-name">Indirect Fire</div>
+      <div class="kw-desc">This weapon can target units it can't draw line of sight to. It takes a penalty to hit, and the target still benefits from cover (and gets extra benefit if entirely out of sight).</div>
+    </div>
+
+    <div class="kw-card" data-cat="attacks">
+      <div class="kw-name">Hazardous</div>
+      <div class="kw-desc">Risky to use — after firing or fighting with it, you roll a die for the model; on a bad result, that model takes damage or is destroyed. A trade-off for extra power.</div>
+    </div>
+
+    <div class="kw-card" data-cat="attacks">
+      <div class="kw-name">Torrent</div>
+      <div class="kw-desc">This weapon automatically hits its target — no roll to hit required.</div>
+    </div>
+
+    <div class="kw-card" data-cat="attacks">
+      <div class="kw-name">Melta X</div>
+      <div class="kw-desc">If the target is within half the weapon's range, add X to this weapon's Damage characteristic for that attack.</div>
+    </div>
+
+    <div class="kw-card" data-cat="attacks">
+      <div class="kw-name">Firing Deck X</div>
+      <div class="kw-desc">Up to X models embarked inside this transport can shoot their weapons out of it, as if they were still on the battlefield.</div>
+    </div>
+
+    <div class="kw-card" data-cat="attacks">
+      <div class="kw-name">One Shot</div>
+      <div class="kw-desc">This weapon can only be fired once per game — after it's used, it's spent for the rest of the match.</div>
+    </div>
+
+    <div class="kw-card" data-cat="attacks">
+      <div class="kw-name">Extra Attacks</div>
+      <div class="kw-desc">Attacks made with this weapon are made in addition to the model's normal attacks — it doesn't replace anything, it just adds more.</div>
+    </div>
+
+    <div class="kw-card" data-cat="attacks">
+      <div class="kw-name">Fights First</div>
+      <div class="kw-desc">This unit fights in the Fight phase before any "normal" units get to, regardless of charge order — a big advantage in melee.</div>
+    </div>
+
+    <div class="category-heading" data-cat="movement">Movement &amp; Deployment</div>
+
+    <div class="kw-card" data-cat="movement">
+      <div class="kw-name">Deep Strike</div>
+      <div class="kw-desc">Instead of setting up on the battlefield at the start of the game, this unit can arrive later, appearing anywhere more than 9" away from enemy models.</div>
+    </div>
+
+    <div class="kw-card" data-cat="movement">
+      <div class="kw-name">Infiltrators</div>
+      <div class="kw-desc">During deployment, this unit can be set up anywhere on the battlefield as long as it's more than 9" from both the enemy deployment zone and any enemy models — letting it start much further forward than usual.</div>
+    </div>
+
+    <div class="kw-card" data-cat="movement">
+      <div class="kw-name">Scouts X</div>
+      <div class="kw-desc">After both sides have finished deploying but before the game begins, this unit can make a free move of up to X inches, as long as it stays away from the enemy.</div>
+    </div>
+
+    <div class="category-heading" data-cat="durability">Durability</div>
+
+    <div class="kw-card" data-cat="durability">
+      <div class="kw-name">Feel No Pain X</div>
+      <div class="kw-desc">Each time this model would lose a wound, roll a die first — on a roll of X or higher, ignore that wound entirely. A extra layer of protection on top of saves.</div>
+    </div>
+
+    <div class="kw-card" data-cat="durability">
+      <div class="kw-name">Stealth</div>
+      <div class="kw-desc">Attacks targeting this unit take a -1 penalty to hit, making the unit harder to shoot or fight effectively.</div>
+    </div>
+
+    <div class="category-heading" data-cat="other">Other</div>
+
+    <div class="kw-card" data-cat="other">
+      <div class="kw-name">Leader</div>
+      <div class="kw-desc">This Character model can attach to a compatible unit (its "bodyguard") and fight/move as part of that unit instead of on its own.</div>
+    </div>
+
+    <div class="kw-card" data-cat="other">
+      <div class="kw-name">Support</div>
+      <div class="kw-desc">Works a lot like Leader — during army muster, before the battle starts, a Support unit attaches to a friendly bodyguard unit and stays with it for the whole game. The difference: a bodyguard unit can have both a Leader <em>and</em> a Support unit attached at the same time, unless something says otherwise.</div>
+    </div>
+
+  </div>
+
+  <div class="no-results" id="noResults">No keywords match your search.</div>
+
+  <footer>The Emperor Protects</footer>
+</div>
+
+<script>
+  let activeCat = 'all';
+
+  function setFilter(cat) {
+    activeCat = cat;
+    document.querySelectorAll('.chip').forEach(c => {
+      c.classList.toggle('active', c.dataset.cat === cat);
+    });
+    filterCards();
+  }
+
+  function filterCards() {
+    const query = document.getElementById('search').value.trim().toLowerCase();
+    const cards = document.querySelectorAll('.kw-card');
+    const headings = document.querySelectorAll('.category-heading');
+    let anyVisible = false;
+    const visibleCats = new Set();
+
+    cards.forEach(card => {
+      const cat = card.dataset.cat;
+      const text = card.textContent.toLowerCase();
+      const matchesCat = activeCat === 'all' || cat === activeCat;
+      const matchesQuery = query === '' || text.includes(query);
+      const show = matchesCat && matchesQuery;
+      card.style.display = show ? 'block' : 'none';
+      if (show) { anyVisible = true; visibleCats.add(cat); }
+    });
+
+    headings.forEach(h => {
+      h.style.display = visibleCats.has(h.dataset.cat) ? 'block' : 'none';
+    });
+
+    document.getElementById('noResults').style.display = anyVisible ? 'none' : 'block';
+  }
+</script>
+</body>
+</html>
