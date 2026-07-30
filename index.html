@@ -236,6 +236,23 @@
     box-shadow: 0 0 0 1px var(--panel-edge);
   }
 
+  .player-name:hover, .vname:hover {
+    text-decoration: underline dotted;
+    text-underline-offset: 3px;
+  }
+
+  .vname {
+    cursor: text;
+    outline: none;
+    border-radius: 4px;
+    padding: 1px 4px;
+  }
+
+  .vname:focus {
+    background: #221e27;
+    box-shadow: 0 0 0 1px var(--panel-edge);
+  }
+
   .stat { margin-bottom: 12px; }
   .stat:last-child { margin-bottom: 0; }
 
@@ -411,12 +428,12 @@
   <!-- Head to head -->
   <div class="versus-bar">
     <div class="versus-side" id="vSide1">
-      <div class="vname" id="vName1">Player 1</div>
+      <div class="vname" id="vName1" contenteditable="true" spellcheck="false" oninput="mirrorName(this, 'name1')" onblur="fallbackName(1)" title="Click to rename">Player 1</div>
       <div class="vscore p1" id="vScore1">0</div>
     </div>
     <div class="versus-vs">VS</div>
     <div class="versus-side" id="vSide2">
-      <div class="vname" id="vName2">Player 2</div>
+      <div class="vname" id="vName2" contenteditable="true" spellcheck="false" oninput="mirrorName(this, 'name2')" onblur="fallbackName(2)" title="Click to rename">Player 2</div>
       <div class="vscore p2" id="vScore2">0</div>
     </div>
   </div>
@@ -426,7 +443,7 @@
 
     <!-- Player 1 -->
     <section class="player p1">
-      <div class="player-name" id="name1" contenteditable="true" spellcheck="false" oninput="syncNames()" title="Tap to rename">Player 1</div>
+      <div class="player-name" id="name1" contenteditable="true" spellcheck="false" oninput="mirrorName(this, 'vName1')" onblur="fallbackName(1)" title="Click to rename">Player 1</div>
 
       <div class="stat">
         <div class="stat-label"><span>Primary</span><span>max 50</span></div>
@@ -468,7 +485,7 @@
 
     <!-- Player 2 -->
     <section class="player p2">
-      <div class="player-name" id="name2" contenteditable="true" spellcheck="false" oninput="syncNames()" title="Tap to rename">Player 2</div>
+      <div class="player-name" id="name2" contenteditable="true" spellcheck="false" oninput="mirrorName(this, 'vName2')" onblur="fallbackName(2)" title="Click to rename">Player 2</div>
 
       <div class="stat">
         <div class="stat-label"><span>Primary</span><span>max 50</span></div>
@@ -572,11 +589,17 @@
     document.getElementById('prevRound').disabled = state.round === 1;
   }
 
-  function syncNames() {
-    const n1 = document.getElementById('name1').textContent.trim() || 'Player 1';
-    const n2 = document.getElementById('name2').textContent.trim() || 'Player 2';
-    document.getElementById('vName1').textContent = n1;
-    document.getElementById('vName2').textContent = n2;
+  function mirrorName(sourceEl, targetId) {
+    document.getElementById(targetId).textContent = sourceEl.textContent;
+  }
+
+  function fallbackName(player) {
+    const nameEl = document.getElementById('name' + player);
+    const vEl = document.getElementById('vName' + player);
+    if (nameEl.textContent.trim() === '') {
+      nameEl.textContent = 'Player ' + player;
+      vEl.textContent = 'Player ' + player;
+    }
   }
 
   function showConfirm() {
