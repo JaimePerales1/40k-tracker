@@ -37,6 +37,8 @@
 
   header { text-align: center; margin-bottom: 16px; }
 
+  .nav-links { display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+
   .back-link {
     display: inline-block;
     font-size: 12px;
@@ -44,7 +46,6 @@
     text-transform: uppercase;
     color: var(--steel);
     text-decoration: none;
-    margin-bottom: 12px;
     border: 1px solid var(--panel-edge);
     padding: 6px 12px;
     border-radius: 20px;
@@ -84,7 +85,7 @@
     color: var(--steel);
     text-align: center;
     margin: 14px auto 18px;
-    max-width: 440px;
+    max-width: 460px;
   }
 
   /* ---------- Search & filters ---------- */
@@ -133,20 +134,30 @@
     color: var(--void);
   }
 
-  /* ---------- Keyword cards ---------- */
+  /* ---------- Category / subcategory headings ---------- */
   .category-heading {
     font-family: 'Cinzel', serif;
-    font-size: 13px;
+    font-size: 14px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 26px 0 4px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--gold-dim);
+  }
+  .category-heading:first-of-type { margin-top: 0; }
+
+  .subcategory-heading {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 11px;
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: var(--azure);
-    margin: 20px 0 10px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--panel-edge);
+    margin: 16px 0 8px;
   }
 
-  .category-heading:first-of-type { margin-top: 0; }
-
+  /* ---------- Keyword cards ---------- */
   .kw-card {
     background: var(--panel);
     border: 1px solid var(--panel-edge);
@@ -156,12 +167,30 @@
     margin-bottom: 8px;
   }
 
+  .kw-card.changed { border-left-color: var(--azure); }
+
   .kw-name {
     font-family: 'Cinzel', serif;
     font-weight: 700;
     font-size: 15px;
     color: var(--gold);
     margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .changed-badge {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--azure);
+    border: 1px solid var(--azure-dim, #2e5570);
+    border-radius: 10px;
+    padding: 1px 7px;
   }
 
   .kw-desc {
@@ -169,6 +198,16 @@
     line-height: 1.45;
     color: var(--bone);
   }
+
+  .kw-changed-note {
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--steel);
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--panel-edge);
+  }
+  .kw-changed-note strong { color: var(--azure); font-weight: 600; }
 
   .no-results {
     text-align: center;
@@ -200,16 +239,18 @@
 <body>
 <div class="app">
   <header>
-    <a class="back-link" href="index.html">◂ Back to Tracker</a>
-    <a class="back-link" href="leaderboard.html">🏆 Leaderboard</a>
-    <div class="eyebrow">Plain-English reference</div>
+    <div class="nav-links">
+      <a class="back-link" href="index.html">◂ Tracker</a>
+      <a class="back-link" href="leaderboard.html">🏆 Leaderboard</a>
+    </div>
+    <div class="eyebrow">Plain-English reference · 11th Edition</div>
     <h1>Keyword Codex</h1>
   </header>
 
   <p class="disclaimer">
-    Quick, in-your-own-words reminders of common core rule keywords — handy for jogging your memory mid-game.
-    These are simplified summaries, not official rules text. Always defer to your rulebook, the official app,
-    or your group's ruling for exact wording and current errata.
+    Quick, in-your-own-words reminders of common 11th edition core keywords — handy for jogging your memory mid-game.
+    These are simplified summaries, not official rules text. A blue tag marks keywords whose rules changed from 10th edition.
+    Always defer to your rulebook or the official app for exact wording and current errata.
   </p>
 
   <div class="search-wrap">
@@ -218,158 +259,11 @@
 
   <div class="filter-row" id="filterRow">
     <button class="chip active" data-cat="all" onclick="setFilter('all')">All</button>
-    <button class="chip" data-cat="attacks" onclick="setFilter('attacks')">Attacks</button>
-    <button class="chip" data-cat="movement" onclick="setFilter('movement')">Movement &amp; Deployment</button>
-    <button class="chip" data-cat="durability" onclick="setFilter('durability')">Durability</button>
-    <button class="chip" data-cat="other" onclick="setFilter('other')">Other</button>
+    <button class="chip" data-cat="weapon" onclick="setFilter('weapon')">Weapon</button>
+    <button class="chip" data-cat="unit" onclick="setFilter('unit')">Unit</button>
   </div>
 
-  <div id="cardContainer">
-
-    <div class="category-heading" data-cat="attacks">Attacks</div>
-
-    <div class="kw-card" data-cat="attacks">
-      <div class="kw-name">Anti-&lt;Keyword&gt; X+</div>
-      <div class="kw-desc">Against units with the matching keyword (like Infantry, Vehicle, or Monster), any wound roll of X or higher automatically counts as a critical wound — even if it normally wouldn't have been one. Great for cutting through specific target types.</div>
-    </div>
-
-    <div class="kw-card" data-cat="attacks">
-      <div class="kw-name">Lethal Hits</div>
-      <div class="kw-desc">A critical hit (an unmodified roll of 6 to hit) automatically wounds the target — no wound roll needed for that attack.</div>
-    </div>
-
-    <div class="kw-card" data-cat="attacks">
-      <div class="kw-name">Devastating Wounds</div>
-      <div class="kw-desc">A critical wound (an unmodified roll of 6 to wound) turns into mortal wounds equal to the weapon's damage, and the target doesn't get to make a save against it.</div>
-    </div>
-
-    <div class="kw-card" data-cat="attacks">
-      <div class="kw-name">Sustained Hits X</div>
-      <div class="kw-desc">A critical hit generates X extra hits on top of the one you already scored — more shots for free when you roll well.</div>
-    </div>
-
-    <div class="kw-card" data-cat="attacks">
-      <div class="kw-name">Twin-linked</div>
-      <div class="kw-desc">You get to re-roll wound rolls for this weapon. Simple and always useful.</div>
-    </div>
-
-    <div class="kw-card" data-cat="attacks">
-      <div class="kw-name">Precision</div>
-      <div class="kw-desc">Hits from this weapon can be allocated to an enemy Character model in the target unit, even if that model isn't normally the closest or otherwise eligible to be picked.</div>
-    </div>
-
-    <div class="kw-card" data-cat="attacks">
-      <div class="kw-name">Heavy</div>
-      <div class="kw-desc">The weapon gets +1 to hit if the model firing it didn't move this turn (stayed stationary).</div>
-    </div>
-
-    <div class="kw-card" data-cat="attacks">
-      <div class="kw-name">Assault</div>
-      <div class="kw-desc">This weapon can still be fired even if the unit Advanced this turn (normally Advancing stops you shooting).</div>
-    </div>
-
-    <div class="kw-card" data-cat="attacks">
-      <div class="kw-name">Rapid Fire X</div>
-      <div class="kw-desc">If the target is within half the weapon's range, add X extra attacks with this weapon.</div>
-    </div>
-
-    <div class="kw-card" data-cat="attacks">
-      <div class="kw-name">Pistol</div>
-      <div class="kw-desc">Can be fired even while your unit is within engagement range of the enemy (normally not allowed), and can target the unit you're locked in combat with.</div>
-    </div>
-
-    <div class="kw-card" data-cat="attacks">
-      <div class="kw-name">Blast</div>
-      <div class="kw-desc">This weapon gets extra attacks against bigger units — roughly +1 attack for every 5 models in the target unit. Rewards shooting into big blobs.</div>
-    </div>
-
-    <div class="kw-card" data-cat="attacks">
-      <div class="kw-name">Ignores Cover</div>
-      <div class="kw-desc">The target doesn't get any benefit from being in cover against this attack.</div>
-    </div>
-
-    <div class="kw-card" data-cat="attacks">
-      <div class="kw-name">Indirect Fire</div>
-      <div class="kw-desc">This weapon can target units it can't draw line of sight to. It takes a penalty to hit, and the target still benefits from cover (and gets extra benefit if entirely out of sight).</div>
-    </div>
-
-    <div class="kw-card" data-cat="attacks">
-      <div class="kw-name">Hazardous</div>
-      <div class="kw-desc">Risky to use — after firing or fighting with it, you roll a die for the model; on a bad result, that model takes damage or is destroyed. A trade-off for extra power.</div>
-    </div>
-
-    <div class="kw-card" data-cat="attacks">
-      <div class="kw-name">Torrent</div>
-      <div class="kw-desc">This weapon automatically hits its target — no roll to hit required.</div>
-    </div>
-
-    <div class="kw-card" data-cat="attacks">
-      <div class="kw-name">Melta X</div>
-      <div class="kw-desc">If the target is within half the weapon's range, add X to this weapon's Damage characteristic for that attack.</div>
-    </div>
-
-    <div class="kw-card" data-cat="attacks">
-      <div class="kw-name">Firing Deck X</div>
-      <div class="kw-desc">Up to X models embarked inside this transport can shoot their weapons out of it, as if they were still on the battlefield.</div>
-    </div>
-
-    <div class="kw-card" data-cat="attacks">
-      <div class="kw-name">One Shot</div>
-      <div class="kw-desc">This weapon can only be fired once per game — after it's used, it's spent for the rest of the match.</div>
-    </div>
-
-    <div class="kw-card" data-cat="attacks">
-      <div class="kw-name">Extra Attacks</div>
-      <div class="kw-desc">Attacks made with this weapon are made in addition to the model's normal attacks — it doesn't replace anything, it just adds more.</div>
-    </div>
-
-    <div class="kw-card" data-cat="attacks">
-      <div class="kw-name">Fights First</div>
-      <div class="kw-desc">This unit fights in the Fight phase before any "normal" units get to, regardless of charge order — a big advantage in melee.</div>
-    </div>
-
-    <div class="category-heading" data-cat="movement">Movement &amp; Deployment</div>
-
-    <div class="kw-card" data-cat="movement">
-      <div class="kw-name">Deep Strike</div>
-      <div class="kw-desc">Instead of setting up on the battlefield at the start of the game, this unit can arrive later, appearing anywhere more than 9" away from enemy models.</div>
-    </div>
-
-    <div class="kw-card" data-cat="movement">
-      <div class="kw-name">Infiltrators</div>
-      <div class="kw-desc">During deployment, this unit can be set up anywhere on the battlefield as long as it's more than 9" from both the enemy deployment zone and any enemy models — letting it start much further forward than usual.</div>
-    </div>
-
-    <div class="kw-card" data-cat="movement">
-      <div class="kw-name">Scouts X</div>
-      <div class="kw-desc">After both sides have finished deploying but before the game begins, this unit can make a free move of up to X inches, as long as it stays away from the enemy.</div>
-    </div>
-
-    <div class="category-heading" data-cat="durability">Durability</div>
-
-    <div class="kw-card" data-cat="durability">
-      <div class="kw-name">Feel No Pain X</div>
-      <div class="kw-desc">Each time this model would lose a wound, roll a die first — on a roll of X or higher, ignore that wound entirely. A extra layer of protection on top of saves.</div>
-    </div>
-
-    <div class="kw-card" data-cat="durability">
-      <div class="kw-name">Stealth</div>
-      <div class="kw-desc">Attacks targeting this unit take a -1 penalty to hit, making the unit harder to shoot or fight effectively.</div>
-    </div>
-
-    <div class="category-heading" data-cat="other">Other</div>
-
-    <div class="kw-card" data-cat="other">
-      <div class="kw-name">Leader</div>
-      <div class="kw-desc">This Character model can attach to a compatible unit (its "bodyguard") and fight/move as part of that unit instead of on its own.</div>
-    </div>
-
-    <div class="kw-card" data-cat="other">
-      <div class="kw-name">Support</div>
-      <div class="kw-desc">Works a lot like Leader — during army muster, before the battle starts, a Support unit attaches to a friendly bodyguard unit and stays with it for the whole game. The difference: a bodyguard unit can have both a Leader <em>and</em> a Support unit attached at the same time, unless something says otherwise.</div>
-    </div>
-
-  </div>
+  <div id="cardContainer"></div>
 
   <div class="no-results" id="noResults">No keywords match your search.</div>
 
@@ -377,39 +271,162 @@
 </div>
 
 <script>
+  // ============================================================
+  // Keyword data — plain-English summaries (11th edition).
+  // cat: weapon | unit | special   (used by filter chips)
+  // sub: subcategory heading within that category
+  // changed: optional note on what changed from 10th edition
+  // ============================================================
+  const KEYWORDS = [
+    // ----- WEAPON: Shooting -----
+    { cat: 'weapon', sub: 'Shooting', name: 'Assault', desc: 'Can be fired even if the unit Advanced this turn. Advancing still means no charging or Actions afterward.' },
+    { cat: 'weapon', sub: 'Shooting', name: 'Heavy', desc: 'Gives +1 to hit if every model in the unit moved 3" or less last turn — all-or-nothing for the whole unit. Doesn\'t apply in Engagement Range, or when arriving from Deep Strike or a transport.', changed: 'Used to require staying completely stationary; now you\'re allowed up to 3" of movement.' },
+    { cat: 'weapon', sub: 'Shooting', name: 'Rapid Fire X', desc: 'Gain X extra shots against a target within half the weapon\'s range. Checked model by model. X can be a flat number or a dice roll.' },
+    { cat: 'weapon', sub: 'Shooting', name: 'Ignores Cover', desc: 'The target gets no Cover bonus against this attack — you fire at full skill regardless of terrain or Stealth.', changed: 'Cover now imposes a -1 to hit in 11th (it\'s that penalty this cancels). Redundant on Torrent weapons, which skip the hit roll anyway.' },
+    { cat: 'weapon', sub: 'Shooting', name: 'Torrent', desc: 'Attacks hit automatically — no hit roll. The number of hits comes straight from the weapon\'s Attacks stat, and it ignores Cover by nature. In Overwatch it still auto-hits where other weapons would need 6s.' },
+    { cat: 'weapon', sub: 'Shooting', name: 'Indirect Fire', desc: 'Can shoot targets it can\'t see. Penalties when doing so: the target always counts as being in Cover (-1 to hit), no re-rolls to hit, and you can\'t fire it while in Engagement Range. With no spotter you only hit on 6s. Fires normally if you do have line of sight.', changed: 'New layered penalty system, plus an explicit ban on firing from Engagement Range.' },
+    { cat: 'weapon', sub: 'Shooting', name: 'Blast X', desc: '+1 attack for every 5 full models in the target unit (rounded down), and Blast X multiplies that bonus. Can never target a unit that\'s in Engagement Range.', changed: 'The X multiplier is new — 10th only gave a flat +1 per 5 models.' },
+    { cat: 'weapon', sub: 'Shooting', name: 'One-Shot', desc: 'Can only be fired once for the whole game. After that, it\'s spent.' },
+    { cat: 'weapon', sub: 'Shooting', name: 'Close Quarters', desc: 'Can be fired while in Engagement Range. This includes the old Pistol keyword and is set to replace it.', changed: 'Renamed from "Pistol" in 11th.' },
+    { cat: 'weapon', sub: 'Shooting', name: 'Pistol', desc: 'Can be fired even while your unit is locked in combat, and can target the enemy unit you\'re engaged with. Generally can\'t be fired alongside non-Pistol weapons.', changed: 'Being folded into the new "Close Quarters" keyword in 11th.' },
+
+    // ----- WEAPON: Hit Roll -----
+    { cat: 'weapon', sub: 'Hit Roll', name: 'Critical Hits', desc: 'An unmodified hit roll of 6. Always counts as a hit, and triggers effects like Lethal Hits or Sustained Hits.' },
+    { cat: 'weapon', sub: 'Hit Roll', name: 'Lethal Hits', desc: 'A critical hit (unmodified 6 to hit) automatically wounds — no wound roll needed for it. Set those hits aside, then roll your remaining hits to wound as normal. Note: these auto-wounds are NOT critical wounds, so the target can still save.', changed: 'The auto-wound is now optional — you can skip it if the weapon also has Anti and Devastating Wounds and you\'d rather roll for a critical wound.' },
+    { cat: 'weapon', sub: 'Hit Roll', name: 'Sustained Hits X', desc: 'A critical hit generates X extra automatic hits on top of the original. Those bonus hits aren\'t critical hits themselves. If paired with Lethal Hits: the original crit auto-wounds, and the X bonus hits still get rolled to wound normally.' },
+    { cat: 'weapon', sub: 'Hit Roll', name: 'Psychic', desc: 'Attacks ignore all modifiers to the hit roll, in both shooting and melee — Cover, Stealth, and enemy special rules are all disregarded. Anti-psyker units may still use Feel No Pain against these attacks.', changed: 'Was previously just a tag marking psychic attacks for enemy resistance; now it actively grants ignore-all-hit-modifiers.' },
+
+    // ----- WEAPON: Wound Roll -----
+    { cat: 'weapon', sub: 'Wound Roll', name: 'Critical Wounds', desc: 'An unmodified wound roll of 6 (or lower if a matching Anti keyword applies). Always wounds, and triggers effects like Devastating Wounds.' },
+    { cat: 'weapon', sub: 'Wound Roll', name: 'Devastating Wounds', desc: 'A critical wound bypasses all Armour and Invulnerable saves — only Feel No Pain can stop it. Each critical wound affects at most one model, regardless of the weapon\'s Damage.' },
+    { cat: 'weapon', sub: 'Wound Roll', name: 'Anti-<Keyword> X+', desc: 'Written as Anti-[keyword] X+. Against a unit with the matching keyword (Vehicle, Monster, Infantry, etc.), any wound roll of X or higher counts as a critical wound and always succeeds. Pairs strongly with Devastating Wounds to turn those crits into mortal wounds.' },
+    { cat: 'weapon', sub: 'Wound Roll', name: 'Melta X', desc: '+X Damage when firing within half range. Checked model by model, so you roll separately for shots inside and outside half range. Base damage is set first, then the Melta bonus is added, then any damage-reduction effects apply.', changed: 'The sequence was clarified: base damage → add Melta → then apply damage reduction.' },
+    { cat: 'weapon', sub: 'Wound Roll', name: 'Twin-linked', desc: 'Re-roll the wound roll. Works on both ranged and melee profiles.' },
+
+    // ----- WEAPON: Melee -----
+    { cat: 'weapon', sub: 'Melee', name: 'Cleave X', desc: '+1 melee attack for every 5 full models in the target unit, multiplied by X. All attacks with that weapon must hit the same unit to get the bonus — split them across units and you lose it. Think of it as the melee version of Blast.', changed: 'Brand new in 11th; no 10th edition equivalent existed.' },
+    { cat: 'weapon', sub: 'Melee', name: 'Lance', desc: '+1 to wound rolls if the bearer\'s unit Charged this turn.' },
+    { cat: 'weapon', sub: 'Melee', name: 'Extra Attacks', desc: 'A model normally fights with just one melee weapon per activation, but an Extra Attacks weapon can be used at the same time as the primary one — its attacks are added on top.', changed: 'Attack-boosting modifiers now also apply to Extra Attack profiles; in 10th they didn\'t.' },
+
+    // ----- WEAPON: Special weapon abilities -----
+    { cat: 'weapon', sub: 'Special Weapon Abilities', name: 'Precision', desc: 'When attacking a unit containing a visible Character, you may allocate the wounds onto that Character first, before other models. Excess damage spills over to the rest of the unit. Works in both shooting and melee.' },
+    { cat: 'weapon', sub: 'Special Weapon Abilities', name: 'Hazardous', desc: 'After attacking, roll a D6 for each Hazardous weapon the unit used. On a 1 or 2, the unit takes 1 mortal wound (3 if it\'s a Monster or Vehicle) — no saves except Feel No Pain. If a Character fired it, they personally take the wound rather than their bodyguard unit.', changed: 'Used to fail on a 1 and remove a model; now fails on 1–2 and deals a mortal wound.' },
+    { cat: 'weapon', sub: 'Special Weapon Abilities', name: 'Conversion', desc: 'Does more damage at longer range instead of shorter. The exact bonus varies by weapon — one common version grants critical hits on a 4+ beyond 12". The specific trigger is always spelled out on the individual datasheet.' },
+    { cat: 'weapon', sub: 'Special Weapon Abilities', name: 'Hunter X', desc: 'Can only target units that have the specified keyword — represents gear that\'s useless against anything else (EMP grenades, creature-specific weapons, etc.).', changed: 'New in 11th; its rules live in the Core Rule Companion rather than the main rulebook.' },
+
+    // ----- UNIT KEYWORDS -----
+    { cat: 'unit', sub: 'Movement & Deployment', name: 'Deep Strike', desc: 'The unit starts in Reserves instead of on the table. It can arrive at the end of any Movement phase, set up anywhere more than 8" from all enemy units.', changed: 'Minimum distance dropped from 9" to 8" to match the new charge rules.' },
+    { cat: 'unit', sub: 'Movement & Deployment', name: 'Infiltrators', desc: 'During deployment, can be set up anywhere on the battlefield more than 8" from enemy deployment zones and more than 8" from all enemy units — letting it start well forward.', changed: 'Minimum distance dropped from 9" to 8".' },
+    { cat: 'unit', sub: 'Movement & Deployment', name: 'Scouts X"', desc: 'Before the first turn, the unit makes a free move of up to X". Can\'t be used if it deployed outside your deployment zone. If it started in Strategic Reserves, it may instead set up anywhere in your deployment zone at the start of round 1.', changed: 'No longer works if deployed outside your zone; new Strategic Reserves option added.' },
+    { cat: 'unit', sub: 'Movement & Deployment', name: 'Fly', desc: 'Can move over enemy models and terrain during any move (Normal, Advance, Fall Back, Charge), measuring the move through the air.' },
+    { cat: 'unit', sub: 'Movement & Deployment', name: 'Hover', desc: 'Ignores the -2" movement penalty that Fly units normally take when moving over terrain.', changed: 'Brand new in 11th — splits Fly movement into standard (-2") and Hover (no penalty).' },
+    { cat: 'unit', sub: 'Movement & Deployment', name: 'Rapid Deployment', desc: 'The unit can disembark after its transport has Advanced. It can\'t charge that turn, but can otherwise act normally.' },
+    { cat: 'unit', sub: 'Movement & Deployment', name: 'Surge Moves', desc: 'Lets a unit move after being shot at, even into Engagement Range, moving as close to the target as possible. Can\'t be used if the unit already moved this phase.', changed: 'Now its own rules section, with the "not if already moved" and "must move toward target" restrictions.' },
+
+    { cat: 'unit', sub: 'Durability', name: 'Feel No Pain X+', desc: 'Each time the unit would lose a wound, roll a D6 first — on X or higher, that wound is ignored. An extra layer of protection on top of normal saves.' },
+    { cat: 'unit', sub: 'Durability', name: 'Stealth', desc: 'Grants the unit the Benefit of Cover even out in the open.', changed: 'In 10th this was a flat -1 to hit; now it gives Cover (-1 to hit via the cover system) instead.' },
+    { cat: 'unit', sub: 'Durability', name: 'Lone Operative', desc: 'Can\'t be targeted by ranged attacks unless the attacker is within a set distance — 12" by default, but some datasheets list it as Lone Operative X" with a different range.', changed: 'Now has an X qualifier so specific datasheets can set their own distance instead of always 12".' },
+
+    { cat: 'unit', sub: 'Combat', name: 'Fights First', desc: 'Lets a unit fight before units that don\'t have it. When multiple units want to fight, the player whose turn it is picks first. A unit that Charged still strikes before enemy Fights First units.', changed: 'The active player now picks first, making it a bit less dominant than in 10th.' },
+    { cat: 'unit', sub: 'Combat', name: 'Desperate Escape', desc: 'Roll a die for each model in the unit when it Falls Back after failing a Battle Shock test, or when it Falls Back through enemy models. On a 1 or 2, a model is removed.' },
+    { cat: 'unit', sub: 'Combat', name: 'Deadly Demise X', desc: 'When the unit is destroyed, roll a D6; on a 6, deal X mortal wounds to every unit within range. For transports, this triggers after any passengers disembark.', changed: 'For transports, it now triggers after disembark rather than before.' },
+
+    { cat: 'unit', sub: 'Support', name: 'Leader', desc: 'A Character with this keyword can attach to a compatible bodyguard unit before the battle, moving and fighting as part of it. An attached unit can normally only contain one Leader, and attacks can\'t be allocated directly to the attached Character.' },
+    { cat: 'unit', sub: 'Support', name: 'Support', desc: 'Works much like Leader — during muster, before the battle, a Support unit attaches to a friendly bodyguard unit for the whole game. The key difference: a bodyguard unit can have both a Leader and a Support unit attached at once, unless something says otherwise.' },
+    { cat: 'unit', sub: 'Support', name: 'Firing Deck X', desc: 'A transport ability: up to X embarked models can shoot their own weapons out of the transport, firing from its position.' },
+    { cat: 'unit', sub: 'Support', name: 'Heal X', desc: 'When a unit is Healed, restore one lost wound per Heal to a wounded model; if none are wounded, return a destroyed model at 1 wound. Repeat X times. On a single model, any excess healing is wasted.', changed: 'Brand new keyword that unifies wound recovery and model return into one mechanic.' },
+
+    { cat: 'unit', sub: 'Objectives & Positioning', name: 'Objective Control (OC)', desc: 'A stat showing how strongly a model contributes to holding objectives. You total up the OC of all models on an objective to see who controls it.' },
+    { cat: 'unit', sub: 'Objectives & Positioning', name: 'Plunging Fire', desc: 'When shooting from a position at least 3" higher than the target, the unit gains +1 to hit — effectively counters the Cover penalty.', changed: 'Now applies from most terrain in the game, not just a few pieces.' },
+  ];
+
   let activeCat = 'all';
+
+  // ---------- Render ----------
+  function buildCards() {
+    const container = document.getElementById('cardContainer');
+    let html = '';
+    let lastCat = null;
+    let lastSub = null;
+
+    const catLabels = { weapon: 'Weapon Keywords', unit: 'Unit Keywords', special: 'Special' };
+
+    KEYWORDS.forEach((kw) => {
+      if (kw.cat !== lastCat) {
+        html += `<div class="category-heading" data-cat="${kw.cat}">${catLabels[kw.cat] || kw.cat}</div>`;
+        lastCat = kw.cat;
+        lastSub = null;
+      }
+      if (kw.sub !== lastSub) {
+        html += `<div class="subcategory-heading" data-cat="${kw.cat}" data-sub="${escapeAttr(kw.sub)}">${escapeHtml(kw.sub)}</div>`;
+        lastSub = kw.sub;
+      }
+      const changedBadge = kw.changed ? '<span class="changed-badge">Changed in 11th</span>' : '';
+      const changedNote = kw.changed ? `<div class="kw-changed-note"><strong>What changed:</strong> ${escapeHtml(kw.changed)}</div>` : '';
+      html += `
+        <div class="kw-card ${kw.changed ? 'changed' : ''}" data-cat="${kw.cat}" data-name="${escapeAttr(kw.name)}" data-text="${escapeAttr((kw.name + ' ' + kw.desc + ' ' + (kw.changed || '')).toLowerCase())}">
+          <div class="kw-name">${escapeHtml(kw.name)}${changedBadge}</div>
+          <div class="kw-desc">${escapeHtml(kw.desc)}</div>
+          ${changedNote}
+        </div>`;
+    });
+
+    container.innerHTML = html;
+  }
 
   function setFilter(cat) {
     activeCat = cat;
-    document.querySelectorAll('.chip').forEach(c => {
-      c.classList.toggle('active', c.dataset.cat === cat);
-    });
+    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.cat === cat));
     filterCards();
   }
 
   function filterCards() {
     const query = document.getElementById('search').value.trim().toLowerCase();
     const cards = document.querySelectorAll('.kw-card');
-    const headings = document.querySelectorAll('.category-heading');
     let anyVisible = false;
+    const visibleSubs = new Set();
     const visibleCats = new Set();
 
     cards.forEach(card => {
       const cat = card.dataset.cat;
-      const text = card.textContent.toLowerCase();
       const matchesCat = activeCat === 'all' || cat === activeCat;
-      const matchesQuery = query === '' || text.includes(query);
+      const matchesQuery = query === '' || card.dataset.text.includes(query);
       const show = matchesCat && matchesQuery;
       card.style.display = show ? 'block' : 'none';
-      if (show) { anyVisible = true; visibleCats.add(cat); }
+      if (show) {
+        anyVisible = true;
+        visibleCats.add(cat);
+      }
     });
 
-    headings.forEach(h => {
+    // Show/hide headings based on whether any card under them is visible
+    document.querySelectorAll('.subcategory-heading').forEach(h => {
+      let sib = h.nextElementSibling;
+      let anyUnder = false;
+      while (sib && sib.classList.contains('kw-card')) {
+        if (sib.style.display !== 'none') { anyUnder = true; break; }
+        sib = sib.nextElementSibling;
+      }
+      h.style.display = anyUnder ? 'block' : 'none';
+    });
+
+    document.querySelectorAll('.category-heading').forEach(h => {
       h.style.display = visibleCats.has(h.dataset.cat) ? 'block' : 'none';
     });
 
     document.getElementById('noResults').style.display = anyVisible ? 'none' : 'block';
   }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str == null ? '' : String(str);
+    return div.innerHTML;
+  }
+  function escapeAttr(str) {
+    return escapeHtml(str).replace(/"/g, '&quot;');
+  }
+
+  buildCards();
 </script>
 </body>
 </html>
