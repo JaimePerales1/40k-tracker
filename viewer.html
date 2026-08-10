@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live View — Warhammer 40,000</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+  :root {
+    --void: #121014;
+    --panel: #1b181e;
+    --panel-edge: #2a2530;
+    --steel: #8d8593;
+    --bone: #e8e2d6;
+    --gold: #c9a227;
+    --gold-dim: #7a6420;
+    --azure: #4f8fb8;
+    --azure-dim: #2e5570;
+    --blood: #a4353c;
+    --radius: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--void);
+    background-image: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201,162,39,0.07), transparent);
+    color: var(--bone);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 18px 10px 40px;
+  }
+
+  .app { width: 100%; max-width: 520px; }
+
+  .nav-links { display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .nav-link {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--steel);
+    text-decoration: none;
+    border: 1px solid var(--panel-edge);
+    padding: 6px 12px;
+    border-radius: 20px;
+    transition: color .15s, border-color .15s;
+  }
+  .nav-link:hover { color: var(--gold); border-color: var(--gold-dim); }
+
+  header { text-align: center; margin-bottom: 16px; }
+
+  .eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--steel);
+    margin-bottom: 5px;
+  }
+
+  h1 {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 24px;
+    letter-spacing: 0.08em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+
+  h1::after {
+    content: "";
+    display: block;
+    width: 120px;
+    height: 1px;
+    margin: 8px auto 0;
+    background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  }
+
+  .live-status {
+    text-align: center;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    color: var(--steel);
+  }
+  .live-status .dot { color: var(--gold); }
+  .live-status.offline .dot { color: var(--blood); }
+
+  /* ---------- Waiting state ---------- */
+  .waiting {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--steel);
+  }
+  .waiting .big {
+    font-family: 'Cinzel', serif;
+    font-size: 18px;
+    color: var(--bone);
+    margin-bottom: 10px;
+    letter-spacing: 0.05em;
+  }
+  .waiting .small { font-size: 14px; line-height: 1.5; }
+
+  #board { display: none; }
+
+  /* ---------- Round rail ---------- */
+  .round-section { margin-bottom: 16px; }
+  .round-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--steel);
+    margin-bottom: 8px;
+  }
+  .round-rail { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .round-plate {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 18px;
+    text-align: center;
+    padding: 10px 0 8px;
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: 6px;
+    color: #4a444f;
+  }
+  .round-plate.done { color: var(--gold-dim); border-color: var(--gold-dim); }
+  .round-plate.active {
+    color: var(--void);
+    background: linear-gradient(180deg, #e0bb45, var(--gold));
+    border-color: var(--gold);
+    box-shadow: 0 0 18px rgba(201,162,39,0.35);
+  }
+  .game-over {
+    text-align: center;
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    color: var(--blood);
+    margin-top: 8px;
+    text-transform: uppercase;
+    display: none;
+  }
+
+  /* ---------- Versus bar ---------- */
+  .versus-bar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    gap: 8px;
+  }
+  .versus-side { text-align: center; }
+  .versus-side .vname {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--steel);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .versus-side .vscore {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 30px;
+    line-height: 1;
+    color: var(--bone);
+    transition: color .2s;
+  }
+  .versus-side.leading .vscore.p1 { color: var(--gold); }
+  .versus-side.leading .vscore.p2 { color: var(--azure); }
+  .versus-vs { font-family: 'Cinzel', serif; font-size: 13px; color: #4a444f; letter-spacing: 0.1em; }
+
+  /* ---------- Player columns ---------- */
+  .players { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .player {
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-top: 3px solid var(--gold);
+    border-radius: var(--radius);
+    padding: 12px 10px;
+  }
+  .player.p2 { border-top-color: var(--azure); }
+  .player-name {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: center;
+    color: var(--gold);
+    margin-bottom: 10px;
+    padding: 4px 6px;
+    min-height: 1.4em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .player.p2 .player-name { color: var(--azure); }
+
+  .stat { margin-bottom: 12px; }
+  .stat:last-child { margin-bottom: 0; }
+  .stat-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--steel);
+    margin-bottom: 5px;
+  }
+  .stat-value {
+    text-align: center;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 34px;
+    line-height: 1;
+    color: var(--bone);
+    font-variant-numeric: tabular-nums;
+    padding: 6px 0;
+  }
+
+  footer {
+    text-align: center;
+    margin-top: 22px;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: #4a444f;
+  }
+
+  @media (max-width: 350px) { .players { grid-template-columns: 1fr; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="nav-links">
+      <a class="nav-link" href="index.html">◂ Home</a>
+      <a class="nav-link" href="codex.html">📖 Codex</a>
+      <a class="nav-link" href="leaderboard.html">🏆 Leaderboard</a>
+    </div>
+    <div class="eyebrow">Live spectator view</div>
+    <h1>Live View</h1>
+  </header>
+
+  <div class="live-status" id="liveStatus"><span class="dot">●</span> Connecting…</div>
+
+  <!-- Waiting / no game shared -->
+  <div class="waiting" id="waiting">
+    <div class="big">No game is being shared right now</div>
+    <div class="small">When your opponent flips on "Share this game" in the Tracker,<br>the live scoreboard will appear here automatically.</div>
+  </div>
+
+  <!-- Live board (mirrors tracker) -->
+  <div id="board">
+    <section class="round-section">
+      <div class="round-label">
+        <span>Battle Round</span>
+        <span id="roundText">Round 1 of 5</span>
+      </div>
+      <div class="round-rail" id="roundRail">
+        <div class="round-plate">I</div>
+        <div class="round-plate">II</div>
+        <div class="round-plate">III</div>
+        <div class="round-plate">IV</div>
+        <div class="round-plate">V</div>
+      </div>
+      <div class="game-over" id="gameOver">☠ Battle Complete ☠</div>
+    </section>
+
+    <div class="versus-bar">
+      <div class="versus-side" id="vSide1">
+        <div class="vname" id="vName1">Player 1</div>
+        <div class="vscore p1" id="vScore1">0</div>
+      </div>
+      <div class="versus-vs">VS</div>
+      <div class="versus-side" id="vSide2">
+        <div class="vname" id="vName2">Player 2</div>
+        <div class="vscore p2" id="vScore2">0</div>
+      </div>
+    </div>
+
+    <div class="players">
+      <section class="player p1">
+        <div class="player-name" id="name1">Player 1</div>
+        <div class="stat"><div class="stat-label"><span>Primary</span><span>max 50</span></div><div class="stat-value" id="p1primary">0</div></div>
+        <div class="stat"><div class="stat-label"><span>Secondary</span><span>max 40</span></div><div class="stat-value" id="p1secondary">0</div></div>
+        <div class="stat"><div class="stat-label"><span>Command Pts</span></div><div class="stat-value" id="p1cp">0</div></div>
+      </section>
+      <section class="player p2">
+        <div class="player-name" id="name2">Player 2</div>
+        <div class="stat"><div class="stat-label"><span>Primary</span><span>max 50</span></div><div class="stat-value" id="p2primary">0</div></div>
+        <div class="stat"><div class="stat-label"><span>Secondary</span><span>max 40</span></div><div class="stat-value" id="p2secondary">0</div></div>
+        <div class="stat"><div class="stat-label"><span>Command Pts</span></div><div class="stat-value" id="p2cp">0</div></div>
+      </section>
+    </div>
+  </div>
+
+  <footer>The Emperor Protects</footer>
+</div>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDwIdVFVKY68xTqlAzXYC6b09c_xNgRnVI",
+    authDomain: "k-tracker-b5034.firebaseapp.com",
+    projectId: "k-tracker-b5034",
+    storageBucket: "k-tracker-b5034.firebasestorage.app",
+    messagingSenderId: "111213205099",
+    appId: "1:111213205099:web:0df81ffd422a1402b3c32e"
+  };
+
+  const statusEl = document.getElementById('liveStatus');
+  const waitingEl = document.getElementById('waiting');
+  const boardEl = document.getElementById('board');
+
+  let db, ready = false;
+  try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    ready = true;
+  } catch (e) {
+    ready = false;
+  }
+
+  if (!ready) {
+    statusEl.classList.add('offline');
+    statusEl.innerHTML = '<span class="dot">●</span> Can\'t connect to server';
+    waitingEl.querySelector('.big').textContent = 'Connection unavailable';
+    waitingEl.querySelector('.small').innerHTML = 'The live view couldn\'t reach the server. Check your internet connection and refresh.';
+  } else {
+    // Real-time listener on the single shared game doc
+    db.collection('liveGame').doc('current').onSnapshot((doc) => {
+      statusEl.classList.remove('offline');
+      statusEl.innerHTML = '<span class="dot">●</span> Live — updates automatically';
+
+      if (!doc.exists || !doc.data().active) {
+        boardEl.style.display = 'none';
+        waitingEl.style.display = 'block';
+        return;
+      }
+      const data = doc.data();
+      const state = data.state;
+      if (!state) {
+        boardEl.style.display = 'none';
+        waitingEl.style.display = 'block';
+        return;
+      }
+      waitingEl.style.display = 'none';
+      boardEl.style.display = 'block';
+      renderBoard(state);
+    }, (err) => {
+      console.error(err);
+      statusEl.classList.add('offline');
+      statusEl.innerHTML = '<span class="dot">●</span> Connection lost — retrying…';
+    });
+  }
+
+  function num(v) { return (typeof v === 'number' && !isNaN(v)) ? v : 0; }
+
+  function renderBoard(state) {
+    const p1 = state['1'] || state[1] || {};
+    const p2 = state['2'] || state[2] || {};
+    const names = state.names || {};
+    const round = num(state.round) || 1;
+
+    // Names
+    const n1 = (names['1'] || names[1] || 'Player 1');
+    const n2 = (names['2'] || names[2] || 'Player 2');
+    document.getElementById('name1').textContent = n1;
+    document.getElementById('name2').textContent = n2;
+    document.getElementById('vName1').textContent = n1;
+    document.getElementById('vName2').textContent = n2;
+
+    // Stats
+    document.getElementById('p1primary').textContent = num(p1.primary);
+    document.getElementById('p1secondary').textContent = num(p1.secondary);
+    document.getElementById('p1cp').textContent = num(p1.cp);
+    document.getElementById('p2primary').textContent = num(p2.primary);
+    document.getElementById('p2secondary').textContent = num(p2.secondary);
+    document.getElementById('p2cp').textContent = num(p2.cp);
+
+    // Totals
+    const t1 = num(p1.primary) + num(p1.secondary);
+    const t2 = num(p2.primary) + num(p2.secondary);
+    document.getElementById('vScore1').textContent = t1;
+    document.getElementById('vScore2').textContent = t2;
+    document.getElementById('vSide1').classList.toggle('leading', t1 > t2);
+    document.getElementById('vSide2').classList.toggle('leading', t2 > t1);
+
+    // Round rail
+    const plates = document.querySelectorAll('.round-plate');
+    plates.forEach((plate, i) => {
+      plate.classList.remove('active', 'done');
+      if (i + 1 < round) plate.classList.add('done');
+      if (i + 1 === round && round <= 5) plate.classList.add('active');
+      if (round === 6) plate.classList.add('done');
+    });
+    const over = round === 6;
+    document.getElementById('roundText').textContent = over ? 'Battle ended' : `Round ${round} of 5`;
+    document.getElementById('gameOver').style.display = over ? 'block' : 'none';
+  }
+</script>
+</body>
+</html>
