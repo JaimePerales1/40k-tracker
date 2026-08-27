@@ -218,7 +218,7 @@
   }
   label:first-of-type { margin-top: 0; }
 
-  input[type="text"], input[type="number"], textarea {
+  input[type="text"], input[type="number"], textarea, select {
     width: 100%;
     padding: 8px 10px;
     font-family: 'Rajdhani', sans-serif;
@@ -228,7 +228,10 @@
     border-radius: 6px;
     color: var(--bone);
   }
-  input:focus, textarea:focus { outline: none; border-color: var(--gold-dim); }
+  select { appearance: none; -webkit-appearance: none; cursor: pointer; }
+  select option { background: var(--panel); color: var(--bone); }
+  select optgroup { background: var(--void); color: var(--steel); font-style: normal; }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--gold-dim); }
   textarea { resize: vertical; min-height: 50px; }
 
   .shared-fields { margin-bottom: 14px; }
@@ -375,6 +378,7 @@
       <a class="nav-link" href="index.html">◂ Home</a>
       <a class="nav-link" href="tracker.html">⚔️ Tracker</a>
       <a class="nav-link" href="codex.html">📖 Codex</a>
+      <a class="nav-link" href="missions.html">🗺️ Missions</a>
     </div>
     <div class="eyebrow">Glory to the victors</div>
     <h1>Leaderboard</h1>
@@ -427,7 +431,45 @@
 
     <div class="shared-fields">
       <label for="mission">Mission Played</label>
-      <input type="text" id="mission" autocomplete="off" placeholder="Optional">
+      <select id="mission">
+        <option value="">— Optional: pick a mission —</option>
+        <optgroup label="Take and Hold (yours)">
+          <option>Battlefield Dominance</option>
+          <option>Immovable Object</option>
+          <option>Determined Acquisition</option>
+          <option>Purge and Secure</option>
+          <option>Inescapable Dominion</option>
+        </optgroup>
+        <optgroup label="Purge the Foe (yours)">
+          <option>Unstoppable Force</option>
+          <option>Meatgrinder</option>
+          <option>Punishment</option>
+          <option>Consecrate</option>
+          <option>Destroyer's Wrath</option>
+        </optgroup>
+        <optgroup label="Disruption (yours)">
+          <option>Death Trap</option>
+          <option>Delaying Action</option>
+          <option>Outmanoeuvre</option>
+          <option>Smoke and Mirrors</option>
+          <option>Locate and Deny</option>
+        </optgroup>
+        <optgroup label="Reconnaissance (yours)">
+          <option>Reconnaissance Sweep</option>
+          <option>Triangulation</option>
+          <option>Surveil the Foe</option>
+          <option>Gather Intel</option>
+          <option>Search and Scour</option>
+        </optgroup>
+        <optgroup label="Priority Assets (yours)">
+          <option>Secure Asset</option>
+          <option>Vital Link</option>
+          <option>Extract Relic</option>
+          <option>Vanguard Operation</option>
+          <option>Sabotage</option>
+        </optgroup>
+        <option value="Other">Other / not listed</option>
+      </select>
       <label for="notes">Notes</label>
       <textarea id="notes" placeholder="Optional — anything worth remembering about this game"></textarea>
     </div>
